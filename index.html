@@ -222,7 +222,7 @@
 </head>
 <body>
 
-  <div id="alert-banner">⏰ Sisa 5 Menit</div>
+  <div id="alert-banner">▶ Mulai!</div>
 
   <div class="card">
     <h1>Countdown Timer</h1>
@@ -233,7 +233,7 @@
         <circle class="ring-progress" id="ring" cx="120" cy="120" r="105" />
       </svg>
       <div class="time-display">
-        <span id="time">07:00</span>
+        <span id="time">07:01</span>
         <span id="status-label">Siap</span>
       </div>
     </div>
@@ -255,9 +255,8 @@
 
   <script>
     // ─── Constants ────────────────────────────────────────────────────
-    const TOTAL_SECONDS = 7 * 60;       // 420 s
-    const ALARM_MINUTES = [5, 3, 1];    // alarm at these remaining minutes (exact seconds match)
-    const ALARM_SECONDS_LAST = 10;       // alarm when 10 s remain
+    const TOTAL_SECONDS = 7 * 60 + 1;  // 421 s  (display starts at 07:01)
+    const ALARM_SECONDS_LAST = 5;       // urgent style & alarm when 5 s remain
     const CIRCUMFERENCE = 2 * Math.PI * 105; // ≈ 659.7
 
     // ─── DOM refs ─────────────────────────────────────────────────────
@@ -322,21 +321,18 @@
     }
 
     function checkAlarms() {
-      // Alarms at exact minute marks (remaining = X*60)
-      for (const m of ALARM_MINUTES) {
-        const key = `m${m}`;
-        if (remaining === m * 60 && !firedAlarms.has(key)) {
-          firedAlarms.add(key);
-          playAlarm('menit');
-          showBanner(`⏰ Sisa ${m} Menit`);
-          return;
-        }
+      // Alarm sisa 1 menit (remaining = 60)
+      if (remaining === 60 && !firedAlarms.has('1menit')) {
+        firedAlarms.add('1menit');
+        playAlarm('menit');
+        showBanner('⏰ Sisa 1 Menit');
+        return;
       }
-      // Alarm at 10 seconds
-      if (remaining === ALARM_SECONDS_LAST && !firedAlarms.has('10s')) {
-        firedAlarms.add('10s');
+      // Alarm sisa 5 detik
+      if (remaining === ALARM_SECONDS_LAST && !firedAlarms.has('5s')) {
+        firedAlarms.add('5s');
         playAlarm('detik');
-        showBanner('⚡ 10 Detik Terakhir!');
+        showBanner('⚡ 5 Detik Terakhir!');
       }
     }
 
@@ -386,6 +382,14 @@
       btnStart.disabled = true;
       btnStop.disabled  = false;
       btnReset.disabled = false;
+
+      // Alarm tanda mulai di detik pertama
+      if (!firedAlarms.has('start')) {
+        firedAlarms.add('start');
+        playAlarm('menit');
+        showBanner('▶ Mulai!');
+      }
+
       intervalId = setInterval(tick, 1000);
     });
 
