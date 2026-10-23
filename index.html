@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countdown 7 Menit</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2d3250 0%, #424769 50%, #676f9d 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #ffffff;
+    }
+
+    /* ─── Card ──────────────────────────────────────────────────── */
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 28px;
+      padding: 48px 56px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+      min-width: 340px;
+    }
+
+    /* ─── Title ─────────────────────────────────────────────────── */
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #f9b17a;
+      opacity: 0.9;
+    }
+
+    /* ─── SVG Ring ───────────────────────────────────────────────── */
+    .ring-wrap {
+      position: relative;
+      width: 240px;
+      height: 240px;
+    }
+
+    .ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 10;
+    }
+
+    .ring-progress {
+      fill: none;
+      stroke: #f9b17a;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+    }
+
+    /* ─── Countdown Text ─────────────────────────────────────────── */
+    .time-display {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    #time {
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.4s ease;
+    }
+
+    #status-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      height: 16px;
+    }
+
+    /* ─── Alert Banner ───────────────────────────────────────────── */
+    #alert-banner {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #f9b17a;
+      color: #2d3250;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 12px 32px;
+      border-radius: 50px;
+      box-shadow: 0 4px 20px rgba(249, 177, 122, 0.4);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+
+    #alert-banner.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Buttons ────────────────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    button {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #btn-start {
+      background: #f9b17a;
+      color: #2d3250;
+      box-shadow: 0 4px 16px rgba(249, 177, 122, 0.35);
+    }
+
+    #btn-start:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(249, 177, 122, 0.55);
+      transform: translateY(-2px);
+    }
+
+    #btn-stop {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    #btn-stop:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    #btn-reset {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    #btn-reset:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    /* ─── Pulse animation when alarm fires ───────────────────────── */
+    @keyframes pulse-ring {
+      0%   { opacity: 1; transform: scale(1); }
+      50%  { opacity: 0.6; transform: scale(1.04); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .ring-wrap.alarm {
+      animation: pulse-ring 0.5s ease 3;
+    }
+
+    /* ─── Urgent color (last 10 seconds) ────────────────────────── */
+    .urgent #time { color: #f9b17a; }
+    .urgent .ring-progress { stroke: #f9b17a; stroke-width: 12; }
+
+    /* ─── Done state ─────────────────────────────────────────────── */
+    @keyframes done-blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .done #time {
+      animation: done-blink 0.8s ease infinite;
+      color: #f9b17a;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="alert-banner">⏰ Sisa 5 Menit</div>
+
+  <div class="card">
+    <h1>Countdown Timer</h1>
+
+    <div class="ring-wrap" id="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 240 240">
+        <circle class="ring-track" cx="120" cy="120" r="105" />
+        <circle class="ring-progress" id="ring" cx="120" cy="120" r="105" />
+      </svg>
+      <div class="time-display">
+        <span id="time">07:00</span>
+        <span id="status-label">Siap</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-start">▶ Start</button>
+      <button id="btn-stop"  disabled>⏸ Stop</button>
+      <button id="btn-reset" disabled>↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Audio elements -->
+  <audio id="audio-menit" preload="auto">
+    <source src="1-3-5-menit.mpeg" type="audio/mpeg" />
+  </audio>
+  <audio id="audio-detik" preload="auto">
+    <source src="10detik.mpeg" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    // ─── Constants ────────────────────────────────────────────────────
+    const TOTAL_SECONDS = 7 * 60;       // 420 s
+    const ALARM_MINUTES = [5, 3, 1];    // alarm at these remaining minutes (exact seconds match)
+    const ALARM_SECONDS_LAST = 10;       // alarm when 10 s remain
+    const CIRCUMFERENCE = 2 * Math.PI * 105; // ≈ 659.7
+
+    // ─── DOM refs ─────────────────────────────────────────────────────
+    const timeEl      = document.getElementById('time');
+    const statusEl    = document.getElementById('status-label');
+    const ringEl      = document.getElementById('ring');
+    const ringWrap    = document.getElementById('ring-wrap');
+    const alertBanner = document.getElementById('alert-banner');
+    const btnStart    = document.getElementById('btn-start');
+    const btnStop     = document.getElementById('btn-stop');
+    const btnReset    = document.getElementById('btn-reset');
+    const audioMenit  = document.getElementById('audio-menit');
+    const audioDetik  = document.getElementById('audio-detik');
+
+    // ─── State ────────────────────────────────────────────────────────
+    let remaining  = TOTAL_SECONDS;
+    let running    = false;
+    let intervalId = null;
+    let firedAlarms = new Set();    // tracks which alarms already played
+    let bannerTimer = null;
+
+    // ─── Ring setup ───────────────────────────────────────────────────
+    ringEl.style.strokeDasharray  = CIRCUMFERENCE;
+    ringEl.style.strokeDashoffset = 0;
+
+    // ─── Helpers ──────────────────────────────────────────────────────
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateRing(sec) {
+      const progress = sec / TOTAL_SECONDS;          // 1 → 0
+      const offset   = CIRCUMFERENCE * (1 - progress);
+      ringEl.style.strokeDashoffset = offset;
+    }
+
+    function showBanner(msg) {
+      alertBanner.textContent = msg;
+      alertBanner.classList.add('show');
+      if (bannerTimer) clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(() => alertBanner.classList.remove('show'), 3500);
+    }
+
+    function pulseRing() {
+      ringWrap.classList.remove('alarm');
+      // force reflow to restart animation
+      void ringWrap.offsetWidth;
+      ringWrap.classList.add('alarm');
+    }
+
+    function playAlarm(type) {
+      if (type === 'menit') {
+        audioMenit.currentTime = 0;
+        audioMenit.play().catch(() => {});
+      } else {
+        audioDetik.currentTime = 0;
+        audioDetik.play().catch(() => {});
+      }
+      pulseRing();
+    }
+
+    function checkAlarms() {
+      // Alarms at exact minute marks (remaining = X*60)
+      for (const m of ALARM_MINUTES) {
+        const key = `m${m}`;
+        if (remaining === m * 60 && !firedAlarms.has(key)) {
+          firedAlarms.add(key);
+          playAlarm('menit');
+          showBanner(`⏰ Sisa ${m} Menit`);
+          return;
+        }
+      }
+      // Alarm at 10 seconds
+      if (remaining === ALARM_SECONDS_LAST && !firedAlarms.has('10s')) {
+        firedAlarms.add('10s');
+        playAlarm('detik');
+        showBanner('⚡ 10 Detik Terakhir!');
+      }
+    }
+
+    function applyUrgentStyle() {
+      if (remaining <= ALARM_SECONDS_LAST) {
+        document.body.classList.add('urgent');
+      } else {
+        document.body.classList.remove('urgent');
+      }
+    }
+
+    // ─── Render ───────────────────────────────────────────────────────
+    function render() {
+      timeEl.textContent = formatTime(remaining);
+      updateRing(remaining);
+      applyUrgentStyle();
+    }
+
+    // ─── Tick ─────────────────────────────────────────────────────────
+    function tick() {
+      if (remaining <= 0) {
+        clearInterval(intervalId);
+        running = false;
+        remaining = 0;
+        render();
+        statusEl.textContent = 'Selesai!';
+        document.body.classList.add('done');
+        btnStart.disabled = true;
+        btnStop.disabled  = true;
+        btnReset.disabled = false;
+        showBanner('✅ Waktu Habis!');
+        return;
+      }
+
+      remaining--;
+      render();
+      checkAlarms();
+      statusEl.textContent = running ? 'Berjalan' : 'Dijeda';
+    }
+
+    // ─── Controls ─────────────────────────────────────────────────────
+    btnStart.addEventListener('click', () => {
+      if (running) return;
+      running = true;
+      statusEl.textContent = 'Berjalan';
+      document.body.classList.remove('done');
+      btnStart.disabled = true;
+      btnStop.disabled  = false;
+      btnReset.disabled = false;
+      intervalId = setInterval(tick, 1000);
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (!running) return;
+      running = false;
+      clearInterval(intervalId);
+      statusEl.textContent = 'Dijeda';
+      btnStart.disabled = false;
+      btnStop.disabled  = true;
+      btnReset.disabled = false;
+    });
+
+    btnReset.addEventListener('click', () => {
+      clearInterval(intervalId);
+      running    = false;
+      remaining  = TOTAL_SECONDS;
+      firedAlarms.clear();
+      document.body.classList.remove('done', 'urgent');
+      statusEl.textContent = 'Siap';
+      btnStart.disabled = false;
+      btnStop.disabled  = true;
+      btnReset.disabled = true;
+      alertBanner.classList.remove('show');
+      render();
+    });
+
+    // ─── Initial render ───────────────────────────────────────────────
+    render();
+  </script>
+</body>
+</html>
